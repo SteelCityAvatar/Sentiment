@@ -1,3 +1,4 @@
+
 import sys
 import os
 import pandas as pd
@@ -7,13 +8,16 @@ import requests
 from RedditScraper import RedditFinancialScraper
 from pyedgar import EDGARIndex, Filing#, Company
 from datetime import datetime
-
+base_dir = os.getcwd()
+project_path = os.path.join(base_dir,'SentimentScraper_Project','src')
+support_files = os.path.join(base_dir,'SentimentScraper_Project','SupportingFiles')
+support_files
+sys.path.append(project_path)
 # Add the path to the sys.path list
 if __name__ == '__main__':
 
     #add absolute path to directory
-    # sys.path.append(r"C:\Users\anura\Documents\PyProjects\FoolAround")
-    
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))    
     # Get AuthKeys
     client_id = os.environ.get('REDDIT_CLIENT_ID')
     client_secret = os.environ.get('REDDIT_CLIENT_SECRET')
@@ -27,7 +31,7 @@ if __name__ == '__main__':
     timestamp = now.strftime('%Y%m%d_%H%M%S')
 
     #Relative path for sec JSON dictionary of companies listed on US stock exchanges
-    json_file_path = r'SupportingFiles\company_tickers.json'
+    json_file_path = rf"{support_files}"+'\company_tickers.json'
     scraper = RedditFinancialScraper(client_id=client_id, client_secret=client_secret, user_agent=user_agent,ticker_file = json_file_path)
     
     #ValueInvestingSub
@@ -52,13 +56,13 @@ if __name__ == '__main__':
     with open('vi_hot_post.json', 'w') as f:
         f.write(test_jsonstr)
         
-    # Update existing data with new data
-    existing_data.extend(vi_hot_post)
+    # # Update existing data with new data
+    # existing_data.extend(vi_hot_post)
 
-    # Convert the updated data to a JSON string
-    json_string = json.dumps(existing_data, indent=4)
+    # # Convert the updated data to a JSON string
+    # json_string = json.dumps(existing_data, indent=4)
 
-    # Write the updated data back to the file
-    with open('vi_hot_post.json', 'w') as f:
-         f.write(json_string)
+    # # Write the updated data back to the file
+    # with open('vi_hot_post.json', 'w') as f:
+    #      f.write(json_string)
 
