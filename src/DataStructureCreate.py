@@ -11,7 +11,6 @@ from datetime import datetime
 base_dir = os.getcwd()
 project_path = os.path.join(base_dir,'SentimentScraper_Project','src')
 support_files = os.path.join(base_dir,'SentimentScraper_Project','SupportingFiles')
-support_files
 sys.path.append(project_path)
 # Add the path to the sys.path list
 if __name__ == '__main__':

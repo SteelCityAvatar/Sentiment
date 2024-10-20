@@ -82,17 +82,22 @@ class RedditFinancialScraper:
     def match_companies(self, comment_text):
         sec_dict = self.ticker_list
         relevant_tickers = []
+        i=0
         for ticker, company_name in sec_dict.items():
-            similarity_score = fuzz.partial_ratio(company_name.lower(), comment_text.lower())
-            if similarity_score > 70:
+            similarity_score = fuzz.token_set_ratio(company_name, comment_text)
+            if similarity_score > 65:
                 relevant_tickers.append(ticker)
-                # print(f"Found reference to {ticker} ({company_name}) in the comment.")
+                print(f"{i}: Found reference to {ticker} ({company_name}) in the comment: {comment_text}.")
+                with open('fuzzymatchlog.txt','a',encoding='utf-8') as f:
+                    f.write(f"{i}: Found reference to {ticker} ({company_name}) in the comment: {comment_text}.")
+                    i +=1
+                    
         return relevant_tickers
 
 # '''
 # Authors: Anurag Purker, & GPT
 # '''
-# import praw
+# import praw/9*+/**98+76
 # import re
 # import pandas as pd
 # import openai
