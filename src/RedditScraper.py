@@ -114,21 +114,20 @@ class RedditFinancialScraper:
                         "Similarity Score": "N/A"
                     })
                 else:
-                    pass
                     # Fuzzy matching
-                    # similarity_score = fuzz.token_set_ratio(company_name, comment_text)
-                    # if similarity_score > 70:
-                    #     relevant_tickers.append(ticker)
-                    #     print(f"Found fuzzy reference to {ticker} ({company_name}) in the comment: {comment_text}.")
-                    #     writer.writerow({
-                    #         "Ticker": ticker,
-                    #         "Company Name": company_name,
-                    #         "Match Type": "Fuzzy Match",
-                    #         "Comment Words": " ".join(comment_words),
-                    #         "Company Words": " ".join(company_words),
-                    #         "Comment": comment_text,
-                    #         "Similarity Score": similarity_score
-                    #     })
+                    similarity_score = fuzz.token_set_ratio(company_name, comment_text)
+                    if similarity_score > 70:
+                        relevant_tickers.append(ticker)
+                        print(f"Found fuzzy reference to {ticker} ({company_name}) in the comment: {comment_text}.")
+                        writer.writerow({
+                            "Ticker": ticker,
+                            "Company Name": company_name,
+                            "Match Type": "Fuzzy Match",
+                            "Comment Words": " ".join(comment_words),
+                            "Company Words": " ".join(company_words),
+                            "Comment": comment_text,
+                            "Similarity Score": similarity_score
+                        })
             return relevant_tickers
 
 

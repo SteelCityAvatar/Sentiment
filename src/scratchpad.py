@@ -48,3 +48,17 @@ match_companies(dict1['comment_body'])
 str1 = "Got 50% potfolio in apple. Bought at $135. I got chance buy microsoft when it was $200 but i though it was too high at that time. For me, i prefer focusing into 2-3 company that have strong financial."
 str2 = "MICROSOFT CORP"
 afuzzywuzzy.fuzz.token_set_ratio(str1,str2)
+
+
+if all(word in comment_words for word in company_words):
+    relevant_tickers.append(ticker)
+    print(f"Found exact reference to {ticker} ({company_name}) in the comment: {comment_text}.")
+    writer.writerow({
+        "Ticker": ticker,
+        "Company Name": company_name,
+        "Match Type": "Exact Match",
+        "Comment Words": " ".join(comment_words),
+        "Company Words": " ".join(company_words),
+        "Comment": comment_text,
+        "Similarity Score": "N/A"
+    })
