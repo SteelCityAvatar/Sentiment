@@ -52,4 +52,4 @@ class GptAnalysis:
         return response                       
     
     def structure_response(self, response):
-        return response.choices[0].message['content']
+        return response.choices[0].message['content']j
