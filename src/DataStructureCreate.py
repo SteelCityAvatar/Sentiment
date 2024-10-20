@@ -1,6 +1,13 @@
 
 import sys
 import os
+
+base_dir = os.getcwd()
+project_path = os.path.join(base_dir,'SentimentScraper_Project','src')
+support_files = os.path.join(base_dir,'SentimentScraper_Project','SupportingFiles')
+sys.path.append(project_path)
+
+
 import pandas as pd
 import numpy as np
 import json
@@ -8,10 +15,6 @@ import requests
 from RedditScraper import RedditFinancialScraper
 from pyedgar import EDGARIndex, Filing#, Company
 from datetime import datetime
-base_dir = os.getcwd()
-project_path = os.path.join(base_dir,'SentimentScraper_Project','src')
-support_files = os.path.join(base_dir,'SentimentScraper_Project','SupportingFiles')
-sys.path.append(project_path)
 # Add the path to the sys.path list
 if __name__ == '__main__':
 
