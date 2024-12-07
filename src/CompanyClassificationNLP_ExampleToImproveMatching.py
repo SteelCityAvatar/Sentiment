@@ -9,7 +9,7 @@ import os
 os.getcwd()
 print("NumPy version:", np.__version__)
 print("h5py version:", h5py.__version__)
-
+# src\CompanyClassificationNLP_ExampleToImproveMatching.py
 class RedditScraper:
     def __init__(self, client_id, client_secret, user_agent, ticker_list_file):
         # Initialize PRAW (Python Reddit API Wrapper)
@@ -36,8 +36,6 @@ class RedditScraper:
         ]
         sec_dict = self.ticker_list
         relevant_tickers = []
-        # comment_words = comment_text.lower().split(" ")
-        # relevant_tickers = comment_words
         
         # Debugging print statements
         print(f"Type of comment_text: {type(comment_text)}")
@@ -47,7 +45,6 @@ class RedditScraper:
             raise ValueError("Expected comment_text to be a string")
         
         comment_words = comment_text.lower().split(" ")
-        relevant_tickers = comment_words
         print(comment_words == [x.lower() for x in comment_text.split(" ")])
     #     comment_words = [x.lower() for x in comment_text.split(" ")]
     
@@ -80,7 +77,7 @@ class RedditScraper:
                 else:
                     # Fuzzy matching
                     similarity_score = fuzz.token_set_ratio(company_name['title'], comment_text)
-                    if similarity_score > 65:
+                    if similarity_score > 85:
                         relevant_tickers.append(company_name['ticker'])
                         print(f"Found fuzzy reference to {company_name['ticker']} ({company_name['title']}) in the comment: {comment_text}.")
                         writer.writerow({
@@ -158,3 +155,4 @@ with open('classified_companies.json', 'w', encoding='utf-8') as file:
     json.dump(classified_data, file, indent=4)
 
 print("Company classification complete. Results saved to classified_companies.json.")
+
