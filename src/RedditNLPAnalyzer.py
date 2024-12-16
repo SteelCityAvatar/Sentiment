@@ -72,7 +72,8 @@ class RedditScraper:
                 data.append({
                     "id": submission.id,
                     "text": submission.selftext if submission.selftext else submission.title,
-                    "type": "post"  # Indicate this is a post
+                    "type": "post",  # Indicate this is a post
+                    "date": submission.created_utc  # Add submission date
                 })
 
                 # Expand and add all comments from the submission
@@ -81,7 +82,8 @@ class RedditScraper:
                     data.append({
                         "id": comment.id,
                         "text": comment.body,
-                        "type": "comment"  # Indicate this is a comment
+                        "type": "comment",  # Indicate this is a comment
+                        "date": comment.created_utc  # Add comment date
                     })
 
             return data
@@ -120,7 +122,8 @@ class RedditScraper:
                     "comment_id": comments[i]["id"],
                     "ner_companies_hf": ner_companies_hf,
                     "comment_text": comments[i]["text"],
-                    'Sentiment_score': sentiment
+                    'Sentiment_score': sentiment,
+                    "date": comments[i]["date"]  # Include comment date
                 })
 
                 # Save intermediate results every 10 comments
