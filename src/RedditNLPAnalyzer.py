@@ -4,6 +4,7 @@ import gc
 from transformers import pipeline
 import pandas as pd
 from fuzzywuzzy import fuzz
+import os
 
 class RedditScraper:
     def __init__(self, client_id, client_secret, user_agent, ticker_list_file):
@@ -136,15 +137,16 @@ class RedditScraper:
 
         # Final save of all classified data
         try:
-            output_path = r'C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\classified_companies_vi.csv'
-            pd.json_normalize(classified_companies).to_csv(output_path, index=False)
+            output_path = os.path.join(repo_path, 'OutputFiles/classified_companies_vi.csv')
             print(f"Classification results saved to {output_path}.")
         except Exception as e:
             print(f"Error saving classified data: {e}")
+            repo_path = os.getcwd()  # Get the current working directory (repository path)
+            
 
         # Save the updated comments with NER and sentiment results
         try:
-            comments_output_path = r'C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\comments_with_classification.json'
+            comments_output_path = os.path.join(repo_path, 'OutputFiles/comments_with_classification.json')
             with open(comments_output_path, 'w') as f:
                 json.dump(comments, f, indent=4)
             print(f"Updated comments saved to {comments_output_path}.")
@@ -162,22 +164,3 @@ class RedditScraper:
                                 model='dbmdz/bert-large-cased-finetuned-conll03-english',
                                 grouped_entities=True)
         gc.collect()  # Force garbage collection to manage memory
-
-# import os
-# client_id = os.environ.get('REDDIT_CLIENT_ID')  # Get Reddit client ID from environment
-# client_secret = os.environ.get('REDDIT_CLIENT_SECRET')  # Get Reddit client secret from environment
-
-# user_agent = os.environ.get('REDDIT_USER_AGENT')  # Get Reddit user agent from environment
-
-# ticker_list_file = r"C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\company_tickers.json"  # Path to ticker list file
-# scraper = RedditScraper(client_id, client_secret, user_agent, ticker_list_file)
-
-# subreddit_name = "ValueInvesting" 
-# comments = scraper.scrape_subreddit(subreddit_name, limit=1)
-# comments
-# import json
-# with open(r'C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\comments.json', 'w') as f:
-#     json.dump(comments, f,indent=4)
-# f.close()
-
-# scraper.classify_companies(comments)
