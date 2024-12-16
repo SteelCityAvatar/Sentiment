@@ -21,8 +21,24 @@ class RedditScraper:
                                 model='dbmdz/bert-large-cased-finetuned-conll03-english',  # Pretrained BERT model
                                 grouped_entities=True)  # Group consecutive entity tokens
 
-        self.current_index = 0 # Initialize current index for processing
+        self.sentiment_pipeline = pipeline("sentiment-analysis")
+        
+
+        # Initialize current index for processing
+        self.current_index = 0 
     
+    def analyze_sentiment(self, text):
+        """
+        Analyze the sentiment of the given text using the Hugging Face sentiment pipeline.
+        """
+        try:
+            # Use the sentiment pipeline to analyze the text
+            sentiment = self.sentiment_pipeline(text)
+            return sentiment
+        except Exception as e:
+            print(f"Sentiment analysis error: {e}")  # Log errors if sentiment analysis fails
+            return []
+
     def match_companies_ner_hf(self, comment_text):
         """
         Use Hugging Face Named Entity Recognition to identify companies in the given comment text.
@@ -85,17 +101,21 @@ class RedditScraper:
                 ner_companies_hf = self.match_companies_ner_hf(comments[i]["text"])
                 print(f"Hugging Face NER results: {ner_companies_hf}")
 
-                # If no results from HF model, reset models and retry
-                if not ner_companies_hf:
-                    print("No NER results from either model, resetting models...")
-                    self.reset_models()  # Reload models
-                    continue  # Retry the same comment
+                # Process comment text with Hugging Face sentiment analysis
+                sentiment = self.analyze_sentiment(comments[i]["text"])
+                print(f"Sentiment analysis results: {sentiment}")
 
-                # Add classified company data to the results list
+                print(comments[i]["text"])
+
+                # Update the comment with NER and sentiment results
+                comments[i]["ner_companies_hf"] = ner_companies_hf
+                comments[i]["Sentiment_score"] = sentiment
+
                 classified_companies.append({
                     "comment_id": comments[i]["id"],
                     "ner_companies_hf": ner_companies_hf,
-                    "comment_text": comments[i]["text"]
+                    "comment_text": comments[i]["text"],
+                    'Sentiment_score': sentiment
                 })
 
                 # Save intermediate results every 10 comments
@@ -103,10 +123,6 @@ class RedditScraper:
                     temp_output_path = f'temp_classified_companies_{i + 1}.csv'
                     pd.json_normalize(classified_companies).to_csv(temp_output_path, index=False)
                     print(f"Intermediate results saved to {temp_output_path}.")
-
-                # Reload models periodically based on the reset interval
-                if (i + 1) % reset_interval == 0:
-                    self.reset_models()
 
                 # Force garbage collection to manage memory
                 gc.collect()
@@ -126,6 +142,15 @@ class RedditScraper:
         except Exception as e:
             print(f"Error saving classified data: {e}")
 
+        # Save the updated comments with NER and sentiment results
+        try:
+            comments_output_path = r'C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\comments_with_classification.json'
+            with open(comments_output_path, 'w') as f:
+                json.dump(comments, f, indent=4)
+            print(f"Updated comments saved to {comments_output_path}.")
+        except Exception as e:
+            print(f"Error saving updated comments: {e}")
+
         return classified_companies
 
     def reset_models(self):
@@ -138,26 +163,21 @@ class RedditScraper:
                                 grouped_entities=True)
         gc.collect()  # Force garbage collection to manage memory
 
+# import os
+# client_id = os.environ.get('REDDIT_CLIENT_ID')  # Get Reddit client ID from environment
+# client_secret = os.environ.get('REDDIT_CLIENT_SECRET')  # Get Reddit client secret from environment
 
+# user_agent = os.environ.get('REDDIT_USER_AGENT')  # Get Reddit user agent from environment
 
-    # def scrape_subreddit(self, subreddit_name, limit=100):
-    #     """
-    #     Scrape comments from a given subreddit.
-    #     """
-    #     try:
-    #         subreddit = self.reddit.subreddit(subreddit_name)  # Access subreddit by name
-    #         comments = []  # Initialize list to store comments
-            
-    #         # Iterate through hot submissions in the subreddit
-    #         for submission in subreddit.hot(limit=limit):
-    #             submission.comments.replace_more(limit=None)  # Expand all comments
-    #             for comment in submission.comments.list():
-    #                 # Add comment ID and text to the list
-    #                 comments.append({
-    #                     "id": comment.id,
-    #                     "text": comment.body
-    #                 })
-    #         return comments
-    #     except Exception as e:
-    #         print(f"Reddit API error: {e}")  # Log errors if Reddit API call fails
-    #         return []s
+# ticker_list_file = r"C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\company_tickers.json"  # Path to ticker list file
+# scraper = RedditScraper(client_id, client_secret, user_agent, ticker_list_file)
+
+# subreddit_name = "ValueInvesting" 
+# comments = scraper.scrape_subreddit(subreddit_name, limit=1)
+# comments
+# import json
+# with open(r'C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\comments.json', 'w') as f:
+#     json.dump(comments, f,indent=4)
+# f.close()
+
+# scraper.classify_companies(comments)
