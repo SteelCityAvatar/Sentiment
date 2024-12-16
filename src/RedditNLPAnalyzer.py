@@ -1,3 +1,7 @@
+"""
+Authors: Anurag Purker
+
+"""
 import praw
 import json
 import gc
