@@ -11,8 +11,7 @@ from transformers import pipeline
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 # Add the path to the sys.path list
-base_dir = os.getcwd()  # Get current working directory
-base_dir
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Get project root directory
 project_path = os.path.join(base_dir, 'src')  # Define project source path
 support_files = os.path.join(base_dir, 'SupportingFiles')  # Define supporting files path
 sys.path.append(project_path)  # Add project path to system path
@@ -55,7 +54,7 @@ if __name__ == '__main__':
 
         user_agent = os.environ.get('REDDIT_USER_AGENT')  # Get Reddit user agent from environment
 
-        ticker_list_file = r"C:\Users\anura\Documents\PyProjects\FoolAround\SentimentScraper_Project\SupportingFiles\company_tickers.json"  # Path to ticker list file
+        ticker_list_file = os.path.join(base_dir, 'SupportingFiles', 'company_tickers.json')  # Path to ticker list file
         scraper = RedditScraper(client_id, client_secret, user_agent, ticker_list_file)
 
         subreddit_name = "ValueInvesting" 

@@ -5,7 +5,7 @@ Authors: Anurag Purker
 import praw
 import json
 import gc
-from transformers import pipeline
+from transformers.pipelines import pipeline
 import pandas as pd
 from fuzzywuzzy import fuzz
 import os
@@ -26,7 +26,9 @@ class RedditScraper:
                                 model='dbmdz/bert-large-cased-finetuned-conll03-english',  # Pretrained BERT model
                                 grouped_entities=True)  # Group consecutive entity tokens
 
-        self.sentiment_pipeline = pipeline("sentiment-analysis")
+        self.sentiment_pipeline = pipeline("sentiment-analysis", 
+                                model="mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis",
+                                return_all_scores=True)
         
 
         # Initialize current index for processing
@@ -144,16 +146,15 @@ class RedditScraper:
 
         # Final save of all classified data
         try:
-            output_path = os.path.join(repo_path, 'OutputFiles/classified_companies_vi.csv')
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            output_path = os.path.join(base_dir, 'OutputFiles', 'classified_companies_vi.csv')
             print(f"Classification results saved to {output_path}.")
         except Exception as e:
             print(f"Error saving classified data: {e}")
-            repo_path = os.getcwd()  # Get the current working directory (repository path)
-            
 
         # Save the updated comments with NER and sentiment results
         try:
-            comments_output_path = os.path.join(repo_path, 'OutputFiles/comments_with_classification.json')
+            comments_output_path = os.path.join(base_dir, 'OutputFiles', 'comments_with_classification.json')
             with open(comments_output_path, 'w') as f:
                 json.dump(comments, f, indent=4)
             print(f"Updated comments saved to {comments_output_path}.")
