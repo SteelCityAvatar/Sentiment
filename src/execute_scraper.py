@@ -58,7 +58,7 @@ if __name__ == '__main__':
         scraper = RedditScraper(client_id, client_secret, user_agent, ticker_list_file)
 
         subreddit_name = "ValueInvesting" 
-        comments = scraper.scrape_subreddit(subreddit_name, limit=1)
+        comments = scraper.scrape_subreddit(subreddit_name, limit=100)
         # scraper.classify_companies(comments)#,timeout=100
         safe_execute(scraper.classify_companies, 100, comments)
     except Exception as e:
