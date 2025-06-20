@@ -104,10 +104,14 @@ class RedditScraper:
             logger.error(f"Reddit API error while scraping {subreddit_name}: {e}", exc_info=True)
             return []
   
-    def _get_output_path(self, filename_key):
+    def _get_output_path(self, type='raw'):
         """Constructs the full output path from the config."""
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        return os.path.join(project_root, config['data'][filename_key])
+        if type == 'raw':
+            path = os.path.join(project_root, config['data_paths']['raw_data'], config['file_names']['raw_comments'])
+        else: # processed
+            path = os.path.join(project_root, config['data_paths']['processed_data'], config['file_names']['processed_comments'])
+        return path
 
     def classify_companies(self, comments, threshold=85):
         """

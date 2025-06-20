@@ -26,14 +26,19 @@ app.add_middleware(
 def load_data():
     """Load data from the processed parquet file specified in the config."""
     try:
-        # Construct the full path from the project root
+        # Construct the full path from the config
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        data_path = os.path.join(project_root, config['data']['processed'])
+        processed_dir = config['data_paths']['processed_data']
+        file_name = config['file_names']['processed_comments']
+        data_path = os.path.join(project_root, processed_dir, file_name)
+        
         df = pd.read_parquet(data_path)
         df['date'] = pd.to_datetime(df['date'])
         return df
+    except KeyError as e:
+        print(f"Error: Missing key in config.yaml: {e}")
+        return pd.DataFrame()
     except Exception as e:
-        # Log this properly in a real app
         print(f"Error loading data: {e}")
         return pd.DataFrame()
 
