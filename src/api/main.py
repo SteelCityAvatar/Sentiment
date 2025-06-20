@@ -1,13 +1,19 @@
+import sys
+import os
+import pandas as pd
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
 from typing import List, Optional
 import uvicorn
-import os
+
+# Add project root to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from src.core.config import config
 
 app = FastAPI()
 
-# Allow CORS for local Streamlit
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,9 +22,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load data once at startup (Parquet for speed)
-parquet_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'OutputFiles', 'comments_with_classification.parquet')
-df = pd.read_parquet(parquet_path)
+# --- Data Loading ---
+def load_data():
+    """Load data from the processed parquet file specified in the config."""
+    try:
+        # Construct the full path from the project root
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        data_path = os.path.join(project_root, config['data']['processed'])
+        df = pd.read_parquet(data_path)
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+    except Exception as e:
+        # Log this properly in a real app
+        print(f"Error loading data: {e}")
+        return pd.DataFrame()
+
+df = load_data()
+# Ensure df is a pandas DataFrame
+if not isinstance(df, pd.DataFrame):
+    df = pd.DataFrame()
 
 @app.get("/companies")
 def get_companies():
@@ -100,4 +122,6 @@ def get_date_range():
     return {"min_date": min_date, "max_date": max_date}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    api_host = config['api']['host']
+    api_port = config['api']['port']
+    uvicorn.run(app, host=api_host, port=api_port) 

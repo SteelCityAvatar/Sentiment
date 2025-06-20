@@ -1,0 +1,25 @@
+# Core ML and Data Handling
+pandas
+praw
+transformers
+torch
+fuzzywuzzy[speedup] # Includes python-Levenshtein for performance
+psutil
+requests
+numpy
+
+# Web App & API
+streamlit
+fastapi
+uvicorn[standard]
+pyarrow # For Parquet file handling
+
+# Visualizations
+wordcloud
+matplotlib
+pynvml # For NVIDIA GPU monitoring
+plotly # For interactive plots
+
+# Configuration & Testing
+pytest
+pyyaml 

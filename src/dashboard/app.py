@@ -1,10 +1,20 @@
+import sys
+import os
 import streamlit as st
-import pandas as pd
 import requests
+import pandas as pd
+import datetime as dt  # Import datetime with an alias
+import plotly.express as px
 from wordcloud import WordCloud
-import datetime
+import matplotlib.pyplot as plt
+import logging
 
-API_URL = "http://localhost:8000"
+# Add project root to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from src.core.config import config
+
+API_URL = config['analytics_app']['api_url']
 
 st.set_page_config(page_title="Reddit Financial Sentiment EDA", layout="wide")
 st.title("Reddit Financial Sentiment EDA & Visualization")
@@ -64,12 +74,19 @@ def get_date_range():
     return r.json()["min_date"], r.json()["max_date"]
 
 min_date_str, max_date_str = get_date_range()
-min_date = datetime.datetime.strptime(min_date_str, "%Y-%m-%d").date()
-max_date = datetime.datetime.strptime(max_date_str, "%Y-%m-%d").date()
+min_date = dt.datetime.strptime(min_date_str, "%Y-%m-%d").date()
+max_date = dt.datetime.strptime(max_date_str, "%Y-%m-%d").date()
+
+if 'start_date' in st.session_state and 'end_date' in st.session_state:
+    start_date_default = st.session_state.start_date
+    end_date_default = st.session_state.end_date
+else:
+    start_date_default = dt.datetime.fromisoformat(min_date_str)
+    end_date_default = dt.datetime.fromisoformat(max_date_str)
 
 date_range = st.sidebar.date_input(
     "Date range",
-    value=(min_date, max_date),
+    value=(start_date_default, end_date_default),
     min_value=min_date,
     max_value=max_date
 )
@@ -116,7 +133,7 @@ for sentiment in ['positive', 'negative']:
     texts = ' '.join(df[df['sentiment_label'] == sentiment]['text'])
     if texts:
         wordcloud = WordCloud(width=800, height=300, background_color='white').generate(texts)
-        st.image(wordcloud.to_array(), use_column_width=True)
+        st.image(wordcloud.to_array(), use_container_width=True)
     else:
         st.write(f"No {sentiment} comments to display.")
 

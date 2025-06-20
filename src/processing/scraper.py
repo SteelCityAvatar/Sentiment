@@ -2,35 +2,46 @@
 Authors: Anurag Purker
 
 """
+import sys
+import os
 import praw
 import json
 import gc
-from transformers.pipelines import pipeline
+from transformers import pipeline
 import pandas as pd
 from fuzzywuzzy import fuzz
-import os
+import logging
+from .config_loader import get_path
+
+# Add project root to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from src.core.config import config
+
+logger = logging.getLogger(__name__)
 
 class RedditScraper:
-    def __init__(self, client_id, client_secret, user_agent, ticker_list_file):
+    def __init__(self, client_id, client_secret, user_agent):
         # Initialize PRAW (Python Reddit API Wrapper)
         self.reddit = praw.Reddit(client_id=client_id,  # Reddit API client ID
                                   client_secret=client_secret,  # Reddit API client secret
                                   user_agent=user_agent)  # User agent for the API
 
         # Load ticker list from file
+        ticker_list_file = get_path('supporting_files', 'company_tickers')
         with open(ticker_list_file, 'r') as file:
-            self.ticker_list = json.load(file)  # Load JSON data from file
+            self.ticker_list = json.load(file)
 
         # Load Hugging Face pipeline for NER
-        self.hf_ner = pipeline("ner",  # Use "ner" pipeline for Named Entity Recognition
-                                model='dbmdz/bert-large-cased-finetuned-conll03-english',  # Pretrained BERT model
-                                grouped_entities=True)  # Group consecutive entity tokens
+        self.hf_ner = pipeline("ner",
+                                model=config['models']['ner'],
+                                grouped_entities=True)
 
-        self.sentiment_pipeline = pipeline("sentiment-analysis", 
-                                model="mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis",
-                                return_all_scores=True)
+        # Initialize DistilRoBERTa fine-tuned for financial sentiment
+        self.sentiment_pipeline = pipeline("sentiment-analysis",
+                                        model=config['models']['sentiment'],
+                                        return_all_scores=True)
         
-
         # Initialize current index for processing
         self.current_index = 0 
     
@@ -43,7 +54,7 @@ class RedditScraper:
             sentiment = self.sentiment_pipeline(text)
             return sentiment
         except Exception as e:
-            print(f"Sentiment analysis error: {e}")  # Log errors if sentiment analysis fails
+            logger.error(f"Sentiment analysis error: {e}", exc_info=True)
             return []
 
     def match_companies_ner_hf(self, comment_text):
@@ -57,7 +68,7 @@ class RedditScraper:
             companies = [entity['word'] for entity in entities if entity['entity_group'] == 'ORG']
             return companies
         except Exception as e:
-            print(f"Hugging Face error: {e}")  # Log errors if Hugging Face pipeline fails
+            logger.error(f"Hugging Face NER error: {e}", exc_info=True)
             return []
         
     def scrape_subreddit(self, subreddit_name, limit=100):
@@ -90,11 +101,15 @@ class RedditScraper:
 
             return data
         except Exception as e:
-            print(f"Reddit API error: {e}")  # Log errors if Reddit API call fails
+            logger.error(f"Reddit API error while scraping {subreddit_name}: {e}", exc_info=True)
             return []
   
+    def _get_output_path(self, filename_key):
+        """Constructs the full output path from the config."""
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        return os.path.join(project_root, config['data'][filename_key])
 
-    def classify_companies(self, comments, reset_interval=50):
+    def classify_companies(self, comments, threshold=85):
         """
         Classify companies based on scraped data using Named Entity Recognition and other matching methods.
         """
@@ -104,17 +119,17 @@ class RedditScraper:
         while self.current_index < len(comments):
             i = self.current_index  # Get the current index
             try:
-                print(f"Processing comment {i + 1}/{len(comments)}: {comments[i]['id']}")  # Log progress
+                logger.info(f"Processing comment {i + 1}/{len(comments)}: {comments[i]['id']}")
 
                 # Process comment text with Hugging Face NER
                 ner_companies_hf = self.match_companies_ner_hf(comments[i]["text"])
-                print(f"Hugging Face NER results: {ner_companies_hf}")
+                logger.debug(f"Hugging Face NER results: {ner_companies_hf}")
 
                 # Process comment text with Hugging Face sentiment analysis
                 sentiment = self.analyze_sentiment(comments[i]["text"])
-                print(f"Sentiment analysis results: {sentiment}")
+                logger.debug(f"Sentiment analysis results: {sentiment}")
 
-                print(comments[i]["text"])
+                logger.info(comments[i]["text"])
 
                 # Update the comment with NER and sentiment results
                 comments[i]["ner_companies_hf"] = ner_companies_hf
@@ -132,7 +147,7 @@ class RedditScraper:
                 if (i + 1) % 10 == 0:
                     temp_output_path = f'temp_classified_companies_{i + 1}.csv'
                     pd.json_normalize(classified_companies).to_csv(temp_output_path, index=False)
-                    print(f"Intermediate results saved to {temp_output_path}.")
+                    logger.info(f"Intermediate results saved to {temp_output_path}.")
 
                 # Force garbage collection to manage memory
                 gc.collect()
@@ -141,25 +156,21 @@ class RedditScraper:
 
             except Exception as e:
                 # Log errors for the current comment and move to the next
-                print(f"Unhandled error with comment {i + 1}/{len(comments)}: {e}")
+                logger.error(f"Unhandled error with comment {i + 1}/{len(comments)}: {e}", exc_info=True)
                 self.current_index += 1
 
         # Final save of all classified data
         try:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            output_path = os.path.join(base_dir, 'OutputFiles', 'classified_companies_vi.csv')
-            print(f"Classification results saved to {output_path}.")
-        except Exception as e:
-            print(f"Error saving classified data: {e}")
-
-        # Save the updated comments with NER and sentiment results
-        try:
-            comments_output_path = os.path.join(base_dir, 'OutputFiles', 'comments_with_classification.json')
-            with open(comments_output_path, 'w') as f:
+            output_path = self._get_output_path('raw')
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            with open(output_path, 'w') as f:
                 json.dump(comments, f, indent=4)
-            print(f"Updated comments saved to {comments_output_path}.")
+            
+            logger.info(f"Successfully classified and saved {len(comments)} comments to {output_path}")
         except Exception as e:
-            print(f"Error saving updated comments: {e}")
+            logger.error(f"Error resolving classified data path: {e}", exc_info=True)
 
         return classified_companies
 
@@ -167,8 +178,8 @@ class RedditScraper:
         """
         Reload models to reset state and manage potential issues.
         """
-        print("Reloading models to reset state...")  # Log model reset
+        logger.info("Reloading models to reset state...")
         self.hf_ner = pipeline("ner",  # Reload Hugging Face pipeline
-                                model='dbmdz/bert-large-cased-finetuned-conll03-english',
+                                model=config['models']['ner'],
                                 grouped_entities=True)
-        gc.collect()  # Force garbage collection to manage memory
+        gc.collect()

@@ -1,0 +1,32 @@
+# --- Project Settings ---
+# Subreddit to scrape
+subreddit_name: "ValueInvesting"
+# Number of posts to scrape from the subreddit's "hot" section
+scrape_limit: 100
+
+# --- File Paths ---
+# All paths should be relative to the project root directory
+data_paths:
+  supporting_files: "SupportingFiles"
+  raw_data: "data/raw"
+  processed_data: "data/processed"
+  log_file: "logs/app.log"
+
+file_names:
+  company_tickers: "company_tickers.json"
+  raw_comments: "comments_with_classification.json"
+  processed_comments: "comments_with_classification.parquet"
+
+# --- Model Settings ---
+# Hugging Face models for NER and Sentiment Analysis
+models:
+  ner: "dbmdz/bert-large-cased-finetuned-conll03-english"
+  sentiment: "mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis"
+
+# --- API & App Settings ---
+api:
+  host: "0.0.0.0"
+  port: 8000
+
+analytics_app:
+  api_url: "http://localhost:8000" 
